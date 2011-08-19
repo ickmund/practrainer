@@ -460,11 +460,6 @@ function get_starting_percentage(skill) {
 	}
 }
 
-function save() {
-	$("#testdiv").html($("form").serialize());
-}
-
-
 function increment_percentage(current, start) {
     // Returns the next percentage for an arbitrary skill, based
     // on the current percentage and the starting percentage.
