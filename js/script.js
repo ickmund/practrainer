@@ -44,7 +44,16 @@ var skillsets = {
         ['Ranger sneak', 'rangersneak'],
         ['Wisdom Lore', 'wisdomlore', true],
         ['Survival', 'survival', true]
-    ]
+    ],
+
+    'fade': [
+		['Sense', 'sense'],
+		['Fade', 'fade'],
+		['Compel', 'compel'],
+		['Darken', 'darken'],
+		['Fear', 'fear'],
+		['Sense channeling', 'sensechanneling']
+	],
 };
 
 skillsets.get_class = function(skill) {
@@ -105,7 +114,7 @@ function build_skill_tables() {
                 $row.append("<td class='skill-percent'><span>0</span>%</td>");
             }
 
-            $row.append("<td class='skill-sessions'><input value='0'></td>");
+            $row.append("<td class='skill-sessions'><input value='0' name='"+skill[1]+"'></td>");
             $tbody.append($row);
         });
     });
@@ -135,6 +144,23 @@ function register_events() {
 
     // make sure they pick a valid class
     $("#faction").change(function() {
+		if($(this).val() != "fade") {
+			if($("#class").val() == "fade") {
+				$("#class").val("warrior");
+			}
+			$("#class option[value='fade']").attr('disabled', 'disabled');
+			$("#class option[value='hunter']").removeAttr('disabled');
+			$("#class option[value='warrior']").removeAttr('disabled');
+			$("#class option[value='rogue']").removeAttr('disabled');
+			$("#class option[value='channeler']").removeAttr('disabled');
+		} else {
+			$("#class option[value='hunter']").attr('disabled', 'disabled');
+			$("#class option[value='warrior']").attr('disabled', 'disabled');
+			$("#class option[value='rogue']").attr('disabled', 'disabled');
+			$("#class option[value='channeler']").attr('disabled', 'disabled');
+			$("#class option[value='fade']").removeAttr('disabled');
+			$("#class").val('fade');
+		}
         if($(this).val() != "human") {
             // if they already have channeler selected, move them to
             // warrior
@@ -273,7 +299,7 @@ function update_information() {
     var required_level = 0;
 
     // get the total number of used sessions, grouped by class
-    var sessions = {'warrior': 0, 'rogue': 0, 'hunter': 0};
+    var sessions = {'warrior': 0, 'rogue': 0, 'hunter': 0, 'fade': 0};
     $("#skill_tables td.skill-sessions input").each(function() {
         var skill = $(this).parents('tr').data('skill');
         var cls = skillsets.get_class(skill);
@@ -308,7 +334,12 @@ function update_information() {
         required_pracs = sessions.warrior * 3;
         required_pracs += sessions.rogue * 3;
         required_pracs += sessions.hunter * 2;
-    }
+    } else if(ch.cls == 'fade') {
+		required_pracs = sessions.warrior * 1;
+		required_pracs += sessions.rogue * 1;
+		required_pracs += sessions.hunter * 1;
+		required_pracs += sessions.fade * 1;
+	}
 
     $("#required_pracs").html(required_pracs);
 
@@ -387,13 +418,16 @@ function calculate_required_level(faction, sessions) {
     if(faction == "trolloc") {
         per_level = 3;
     }
+	if(faction == "fade") {
+		per_level = 4;
+	}
 
     var level = 1;
     var pracs = 8;
 
     while(pracs < sessions) {
         level++;
-        pracs += (level <= 30 ? per_level : 2);
+       	pracs += (level <= 30 ? per_level : 2);
     }
 
     return level;
@@ -421,6 +455,13 @@ function get_starting_percentage(skill) {
         return Math.floor((ch.str + ch.int + ch.wil + ch.dex) / 4.0)
     }
 
+	if(cls == 'fade') {
+		return Math.floor(ch.int);
+	}
+}
+
+function save() {
+	$("#testdiv").html($("form").serialize());
 }
 
 
