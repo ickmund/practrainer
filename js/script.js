@@ -1,59 +1,73 @@
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+
+    var params = {}, tokens,
+        re = /[?&]?([^=]+)=([^&]*)/g;
+
+    while (tokens = re.exec(qs)) {
+        params[decodeURIComponent(tokens[1])]
+            = decodeURIComponent(tokens[2]);
+    }
+
+    return params;
+}
+
 /*
  * Each skill is represented by a list of display name, code name, and an
  * optional boolean indicating whether or not this is a leveled skill.
  */
 
 var skillsets = {
-    'warrior': [
-        ['Shield parry', 'shieldparry'],
-        ['Bash', 'bash'],
-        ['Kick', 'kick'],
-        ['Charge', 'charge'],
-        ['Rescue', 'rescue'],
-        ['Long blades', 'longblades'],
-        ['Medium blades', 'mediumblades'],
-        ['Fencing blades', 'fencingblades'],
-        ['Staves', 'staves'],
-        ['Spears', 'spears'],
-        ['Polearms', 'polearms'],
-        ['Javelins', 'javelins'],
-        ['Clubs', 'clubs'],
-        ['Axes', 'axes'],
-        ['Chains', 'chains']
-    ],
+    'warrior': {
+        a: ['Shield parry', 'shieldparry'],
+        b: ['Bash', 'bash'],
+        c: ['Kick', 'kick'],
+        d: ['Charge', 'charge'],
+        e: ['Rescue', 'rescue'],
+        f: ['Long blades', 'longblades'],
+        g: ['Medium blades', 'mediumblades'],
+        h: ['Fencing blades', 'fencingblades'],
+        i: ['Staves', 'staves'],
+        j: ['Spears', 'spears'],
+        k: ['Polearms', 'polearms'],
+        l: ['Javelins', 'javelins'],
+        m: ['Clubs', 'clubs'],
+        n: ['Axes', 'axes'],
+        o: ['Chains', 'chains']
+    },
 
-    'rogue': [
-        ['Palm', 'palm'],
-        ['Steal', 'steal'],
-        ['Dodge', 'dodge'],
-        ['Hide', 'hide'],
-        ['Short blades', 'shortblades'],
-        ['Sneak', 'sneak'],
-        ['Backstab', 'backstab'],
-        ['Attack', 'attack'],
-        ['Pick', 'pick'],
-        ['Projectiles', 'projectiles']
-    ],
+    'rogue': {
+        a: ['Palm', 'palm'],
+        b: ['Steal', 'steal'],
+        c: ['Dodge', 'dodge'],
+        d: ['Hide', 'hide'],
+        e: ['Short blades', 'shortblades'],
+        f: ['Sneak', 'sneak'],
+        g: ['Backstab', 'backstab'],
+        h: ['Attack', 'attack'],
+        i: ['Pick', 'pick'],
+        j: ['Projectiles', 'projectiles']
+    },
 
-    'hunter': [
-        ['Search', 'search'],
-        ['Ride', 'ride', true],
-        ['Track', 'track'],
-        ['Notice', 'notice'],
-        ['Swim', 'swim'],
-        ['Ranger sneak', 'rangersneak'],
-        ['Wisdom Lore', 'wisdomlore', true],
-        ['Survival', 'survival', true]
-    ],
+    'hunter': {
+        a: ['Search', 'search'],
+        b: ['Ride', 'ride', true],
+        c: ['Track', 'track'],
+        d: ['Notice', 'notice'],
+        e: ['Swim', 'swim'],
+        f: ['Ranger sneak', 'rangersneak'],
+        g: ['Wisdom Lore', 'wisdomlore', true],
+        h: ['Survival', 'survival', true]
+    },
 
-    'fade': [
-		['Sense', 'sense'],
-		['Fade', 'fade'],
-		['Compel', 'compel'],
-		['Darken', 'darken'],
-		['Fear', 'fear'],
-		['Sense channeling', 'sensechanneling']
-	],
+    'fade': {
+		a: ['Sense', 'sense'],
+		b: ['Fade', 'fade'],
+		c: ['Compel', 'compel'],
+		d: ['Darken', 'darken'],
+		e: ['Fear', 'fear'],
+		f: ['Sense channeling', 'sensechanneling']
+	},
 };
 
 skillsets.get_class = function(skill) {
@@ -346,12 +360,87 @@ function update_information() {
     required_level = calculate_required_level(ch.faction, required_pracs);
     $("#required_level").html(required_level);
 
+    var stats = [
+        $("#stats_str").val(), 
+        $("#stats_int").val(),
+        $("#stats_wil").val(),
+        $("#stats_dex").val(),
+        $("#stats_con").val()
+    ];
+
+    var tables = {};
+    $.each(['warrior', 'rogue', 'hunter', 'fade'], function(i, table) {
+        tables[table] = {};
+        $.each(skillsets[table], function(j, skill) {
+            if($("input[name="+skill[1]+"]").val() > 0) {
+                tables[table][j] = $("input[name="+skill[1]+"]").val();
+            }
+        });
+    });
+
+    var hash  = "?sex="+$("#sex").val();
+        hash += "&faction="+$("#faction").val();
+        hash += "&class="+$("#class").val();
+        hash += "&s=" + stats.join(',');
+
+    $.each(tables, function(category, skills) {
+        hash = hash + "&" + category.substr(0, 1) + "=";
+        $.each(skills, function(skill, pracs) {
+            hash = hash + skill + "=" + pracs + ",";
+        });
+    });
+
+    location.hash = hash;
 }
 
+function setup_skills(table, skills) {
+    $.each(skills.split(','), function(i, s) {
+        if(!s) return;
+        var d = s.split('=');
+        if(skillsets[table][d[0]][1]) {
+            $("input[name="+skillsets[table][d[0]][1]+"]").val(d[1]);
+            $("input[name="+skillsets[table][d[0]][1]+"]").change();
+        }
+    });
+}
+
+function build_from_query() {
+    var query = getQueryParams(location.hash.substr(1));
+    if(!query.sex) return;
+
+    console.log(query);
+    $("#sex").val(query.sex);
+    $("#faction").val(query.faction);
+    $("#class").val(query.class);
+
+    var s = query.s.split(',');
+    $("#stats_str").val(s[0]);
+    $("#stats_int").val(s[1]);
+    $("#stats_wil").val(s[2]);
+    $("#stats_dex").val(s[3]);
+    $("#stats_con").val(s[4]);
+
+    if(query.w) {
+        setup_skills('warrior', query.w);
+    }
+
+    if(query.r) {
+        setup_skills('rogue', query.r);
+    }
+
+    if(query.h) {
+        setup_skills('hunter', query.h);
+    }
+
+    if(query.f) {
+        setup_skills('fade', query.f);
+    }
+}
 
 $(function() {
     register_events();
     build_skill_tables();
+    build_from_query();  
 });
 
 // HERE BE DRAGONS {{{
